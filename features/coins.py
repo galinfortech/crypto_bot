@@ -1,25 +1,17 @@
-from fastapi import APIRouter
-from utils.fetcher import fetch_top_coins
+import requests
 
-router = APIRouter()
-
-# Plan-to-limit mapping
-PLAN_LIMITS = {
-    "basic": 5,
-    "pro": 25,
-    "ultra": 50,
-    "mega": 100
-}
-
-@router.get("/coins/{plan}")
-async def get_coins(plan: str):
-    if plan not in PLAN_LIMITS:
-        return {"error": "Invalid plan. Choose basic, pro, ultra, or mega."}
-
-    limit = PLAN_LIMITS[plan]
-    coins = await fetch_top_coins(limit)
-    return {
-        "plan": plan,
-        "limit": limit,
-        "coins": coins
+def fetch_top_coins(limit: int):
+    url = f"https://api.coingecko.com/api/v3/coins/markets"
+    params = {
+        "vs_currency": "usd",
+        "order": "market_cap_desc",
+        "per_page": limit,
+        "page": 1,
+        "sparkline": "false"
     }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": f"Failed to fetch data from CoinGecko (status {response.status_code})"}
+
